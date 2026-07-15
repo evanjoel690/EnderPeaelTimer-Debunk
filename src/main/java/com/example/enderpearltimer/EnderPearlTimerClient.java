@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.option.KeyBindingCategory;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.projectile.thrown.EnderPearlEntity;
@@ -37,7 +38,7 @@ public class EnderPearlTimerClient implements ClientModInitializer {
                 "key.enderpearltimer.toggle",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                "key.categories.misc"
+                KeyBindingCategory.MISC
         ));
 
         // DEBUG: Erkennt JEDE Enderperle (auch fremde), damit wir sehen
