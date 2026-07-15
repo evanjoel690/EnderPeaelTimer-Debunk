@@ -37,7 +37,7 @@ public class EnderPearlTimerClient implements ClientModInitializer {
                 "key.enderpearltimer.toggle",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
-                "category.misc"
+                KeyBinding.CATEGORY_MISC
         ));
 
         // DEBUG: Erkennt JEDE Enderperle (auch fremde), damit wir sehen
