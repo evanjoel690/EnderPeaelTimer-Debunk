@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "enderpearltimer",
+  "version": "${version}",
+  "name": "Ender Pearl Timer",
+  "description": "Zeigt einen Countdown zwischen Herzen/Hunger-Leiste und XP-Leiste an, der anzeigt, wann deine geworfene Enderperle landet.",
+  "authors": [
+    "Du"
+  ],
+  "license": "CC0-1.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.example.enderpearltimer.EnderPearlTimerClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
