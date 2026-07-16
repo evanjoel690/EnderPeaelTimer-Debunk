@@ -90,4 +90,8 @@ public class EnderPearlTimerClient implements ClientModInitializer {
 
         int textWidth = client.textRenderer.getWidth(text);
         int x = (screenWidth - textWidth) / 2;
-        int y = screenHeight -
+        int y = screenHeight - Y_OFFSET_FROM_BOTTOM;
+
+        context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFF0000);
+    }
+}
