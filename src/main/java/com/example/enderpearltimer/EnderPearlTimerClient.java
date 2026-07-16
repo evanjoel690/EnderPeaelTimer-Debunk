@@ -14,13 +14,10 @@ import net.minecraft.entity.projectile.thrown.EnderPearlEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EnderPearlTimerClient implements ClientModInitializer {
 
     public static final String MOD_ID = "enderpearltimer";
-    private static final Logger LOGGER = LoggerFactory.getLogger("enderpearltimer");
 
     private static final int Y_OFFSET_FROM_BOTTOM = 49;
 
@@ -29,7 +26,6 @@ public class EnderPearlTimerClient implements ClientModInitializer {
 
     private static KeyBinding toggleTimerKey;
     private static boolean timerVisible = true;
-    private static boolean firstRenderLogged = false;
 
     @Override
     public void onInitializeClient() {
@@ -46,17 +42,8 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             if (client.player == null) {
                 return;
             }
-            if (entity instanceof EnderPearlEntity pearl) {
-                boolean isOwner = pearl.getOwner() == client.player;
-                client.player.sendMessage(Text.literal(
-                        "[PearlTimer-Debug] Perle erkannt. Owner=" + pearl.getOwner()
-                                + " | ist eigener Spieler=" + isOwner
-                ), false);
-
-                if (isOwner) {
-                    PearlTracker.startTracking(pearl);
-                    client.player.sendMessage(Text.literal("[PearlTimer-Debug] Tracking gestartet."), false);
-                }
+            if (entity instanceof EnderPearlEntity pearl && pearl.getOwner() == client.player) {
+                PearlTracker.startTracking(pearl);
             }
         });
 
@@ -73,59 +60,38 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             }
         });
 
-        LOGGER.info("PearlTimer: registriere HUD-Element jetzt...");
-        try {
-            HudElementRegistry.addLast(
-                    Identifier.of(MOD_ID, "pearl_timer"),
-                    EnderPearlTimerClient::renderTimer
-            );
-            LOGGER.info("PearlTimer: HUD-Element erfolgreich registriert.");
-        } catch (Throwable t) {
-            LOGGER.error("PearlTimer: FEHLER beim Registrieren des HUD-Elements!", t);
-        }
+        HudElementRegistry.addLast(
+                Identifier.of(MOD_ID, "pearl_timer"),
+                EnderPearlTimerClient::renderTimer
+        );
     }
 
     private static void renderTimer(DrawContext context, RenderTickCounter tickCounter) {
-        try {
-            if (!firstRenderLogged) {
-                LOGGER.info("PearlTimer: renderTimer wurde zum ersten Mal aufgerufen.");
-                firstRenderLogged = true;
-            }
+        MinecraftClient client = MinecraftClient.getInstance();
 
-            MinecraftClient client = MinecraftClient.getInstance();
-
-            if (client.options.hudHidden) {
-                return;
-            }
-
-            context.drawTextWithShadow(client.textRenderer, Text.literal("PearlTimer HUD aktiv"), 4, 4, 0xFFFFFF00);
-
-            if (!timerVisible) {
-                return;
-            }
-
-            Text text;
-            if (PearlTracker.isShowingBubbleColumnFlash()) {
-                text = Text.literal("Blasensäule");
-            } else {
-                Float secondsRemaining = PearlTracker.getSecondsRemaining();
-                if (secondsRemaining == null) {
-                    return;
-                }
-                float clamped = Math.max(0.0f, secondsRemaining);
-                text = Text.literal(String.format("%.1fs", clamped));
-            }
-
-            int screenWidth = context.getScaledWindowWidth();
-            int screenHeight = context.getScaledWindowHeight();
-
-            int textWidth = client.textRenderer.getWidth(text);
-            int x = (screenWidth - textWidth) / 2;
-            int y = screenHeight - Y_OFFSET_FROM_BOTTOM;
-
-            context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFFFFFF);
-        } catch (Throwable t) {
-            LOGGER.error("PearlTimer: FEHLER beim Rendern!", t);
+        if (client.options.hudHidden || !timerVisible) {
+            return;
         }
+
+        Text text;
+        if (PearlTracker.isShowingBubbleColumnFlash()) {
+            text = Text.literal("BubbelColuem");
+        } else {
+            Float secondsRemaining = PearlTracker.getSecondsRemaining();
+            if (secondsRemaining == null) {
+                return;
+            }
+            float clamped = Math.max(0.0f, secondsRemaining);
+            text = Text.literal(String.format("%.1fs", clamped));
+        }
+
+        int screenWidth = context.getScaledWindowWidth();
+        int screenHeight = context.getScaledWindowHeight();
+
+        int textWidth = client.textRenderer.getWidth(text);
+        int x = (screenWidth - textWidth) / 2;
+        int y = screenHeight - Y_OFFSET_FROM_BOTTOM;
+
+        context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFFFFFF);
     }
 }
