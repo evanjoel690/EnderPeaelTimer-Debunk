@@ -98,7 +98,7 @@ public class EnderPearlTimerClient implements ClientModInitializer {
                 return;
             }
 
-            context.drawTextWithShadow(client.textRenderer, Text.literal("PearlTimer HUD aktiv"), 4, 4, 0xFFFF00);
+            context.drawTextWithShadow(client.textRenderer, Text.literal("PearlTimer HUD aktiv"), 4, 4, 0xFFFFFF00);
 
             if (!timerVisible) {
                 return;
@@ -123,7 +123,7 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             int x = (screenWidth - textWidth) / 2;
             int y = screenHeight - Y_OFFSET_FROM_BOTTOM;
 
-            context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFFFF);
+            context.drawTextWithShadow(client.textRenderer, text, x, y, 0xFFFFFFFF);
         } catch (Throwable t) {
             LOGGER.error("PearlTimer: FEHLER beim Rendern!", t);
         }
