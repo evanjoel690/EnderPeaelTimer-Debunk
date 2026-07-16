@@ -19,15 +19,12 @@ public class EnderPearlTimerClient implements ClientModInitializer {
 
     public static final String MOD_ID = "enderpearltimer";
 
-    // Y-Offset relativ zum unteren Bildschirmrand.
-    // -22 = Hoehe der Hotbar, -29 ca. XP-Leiste, -39/-49 = Herzen/Hunger-Bereich.
-    // Bei Bedarf anpassen, falls z.B. eine andere GUI-Skalierung genutzt wird.
     private static final int Y_OFFSET_FROM_BOTTOM = 49;
 
+    private static final KeyBinding.Category KEY_CATEGORY =
+            KeyBinding.Category.create(Identifier.of(MOD_ID, "main"));
+
     private static KeyBinding toggleTimerKey;
-    // Standardmaessig sichtbar; per Hotkey umschaltbar. Taste ist nicht
-    // vorbelegt (GLFW_KEY_UNKNOWN) -> vom Spieler in Optionen > Steuerung
-    // frei einstellbar, wie gewuenscht.
     private static boolean timerVisible = true;
 
     @Override
@@ -36,12 +33,10 @@ public class EnderPearlTimerClient implements ClientModInitializer {
         toggleTimerKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.enderpearltimer.toggle",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_UNKNOWN
+                GLFW.GLFW_KEY_UNKNOWN,
+                KEY_CATEGORY
         ));
 
-        // DEBUG: Erkennt JEDE Enderperle (auch fremde), damit wir sehen
-        // koennen, ob das Event ueberhaupt feuert und der Owner-Vergleich
-        // stimmt. Das entfernen wir wieder, sobald es funktioniert.
         ClientEntityEvents.ENTITY_LOAD.register((entity, world) -> {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.player == null) {
@@ -61,15 +56,12 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             }
         });
 
-        // Wenn die getrackte Perle aus der Welt entfernt wird (= eingeschlagen),
-        // Timer beenden.
         ClientEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
             if (PearlTracker.isTracking(entity)) {
                 PearlTracker.stopTracking();
             }
         });
 
-        // Jeden Client-Tick die Restzeit neu berechnen und Hotkey abfragen.
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             PearlTracker.tick(client);
             while (toggleTimerKey.wasPressed()) {
@@ -77,8 +69,6 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             }
         });
 
-        // HUD-Element registrieren. addLast() rendert nach allen anderen
-        // HUD-Elementen, die Position wird unten manuell berechnet.
         HudElementRegistry.addLast(
                 Identifier.of(MOD_ID, "pearl_timer"),
                 EnderPearlTimerClient::renderTimer
@@ -92,9 +82,6 @@ public class EnderPearlTimerClient implements ClientModInitializer {
             return;
         }
 
-        // DEBUG: permanenter Test-Text oben links, um zu pruefen, ob das
-        // HUD-Rendering ueberhaupt aufgerufen wird. Entfernen, sobald
-        // bestaetigt.
         context.drawTextWithShadow(client.textRenderer, Text.literal("PearlTimer HUD aktiv"), 4, 4, 0xFFFF00);
 
         if (!timerVisible) {
@@ -103,8 +90,6 @@ public class EnderPearlTimerClient implements ClientModInitializer {
 
         Text text;
         if (PearlTracker.isShowingBubbleColumnFlash()) {
-            // Kurzer Hinweis, danach verschwindet der Timer komplett
-            // (siehe PearlTracker.tick()).
             text = Text.literal("Blasensäule");
         } else {
             Float secondsRemaining = PearlTracker.getSecondsRemaining();
