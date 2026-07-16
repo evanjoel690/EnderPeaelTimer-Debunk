@@ -12,35 +12,16 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
-/**
- * Trackt eine vom Spieler geworfene Enderperle und berechnet jeden Tick
- * neu, in wie vielen Ticks sie voraussichtlich einschlaegt.
- *
- * Die Simulation nutzt die vanilla-typischen Bewegungswerte einer
- * Enderperle (Schwerkraft 0.03 Bloecke/Tick^2, Luftwiderstand 0.99)
- * und rasterisiert die Flugbahn gegen die tatsaechliche Blockkollision
- * der Welt. Da jeden Tick mit der echten, vom Server synchronisierten
- * Position/Geschwindigkeit neu gerechnet wird, gleicht sich die
- * Vorhersage automatisch an kleine Abweichungen an und wird kurz vor
- * dem Einschlag praktisch exakt.
- *
- * Befindet sich die Perle in einer Blasensaeule (Wasser + Seelensand/Magma),
- * wird die normale Fallsimulation ausgesetzt, da diese Schwerkraft+Drag
- * allein nicht abbildet. Stattdessen wird das nur angezeigt, ohne eine
- * (falsche) Sekundenzahl zu erfinden.
- */
 public final class PearlTracker {
 
     private static final float GRAVITY = 0.03f;
     private static final float DRAG = 0.99f;
-    // Sicherheitsgrenze, damit die Simulation nie endlos laeuft (20s)
     private static final int MAX_SIMULATION_TICKS = 400;
 
     private static EnderPearlEntity trackedPearl;
     private static Float secondsRemaining;
     private static boolean inBubbleColumn;
     private static int bubbleFlashTicksLeft;
-    // Wie lange "Blasensäule" angezeigt wird, bevor der Timer ganz verschwindet (2s)
     private static final int BUBBLE_FLASH_DURATION_TICKS = 40;
 
     private PearlTracker() {
@@ -64,20 +45,10 @@ public final class PearlTracker {
         bubbleFlashTicksLeft = 0;
     }
 
-    /**
-     * Verbleibende Zeit bis zum voraussichtlichen Einschlag in Sekunden,
-     * oder null, wenn aktuell keine Perle getrackt wird oder gerade der
-     * Blasensaeulen-Hinweis angezeigt wird (siehe isShowingBubbleColumnFlash()).
-     */
     public static Float getSecondsRemaining() {
         return secondsRemaining;
     }
 
-    /**
-     * Ob gerade kurz "Blasensäule" angezeigt werden soll. Danach wird
-     * das Tracking automatisch komplett beendet (Timer verschwindet ganz),
-     * da die Fallsimulation Blasensaeulen nicht nachbilden kann.
-     */
     public static boolean isShowingBubbleColumnFlash() {
         return inBubbleColumn && bubbleFlashTicksLeft > 0;
     }
@@ -92,7 +63,6 @@ public final class PearlTracker {
         }
 
         if (trackedPearl.isRemoved() || !trackedPearl.isAlive()) {
-            // Perle wurde entfernt -> ist eingeschlagen (Teleport passiert)
             stopTracking();
             return;
         }
@@ -100,23 +70,26 @@ public final class PearlTracker {
         World world = trackedPearl.getEntityWorld();
         Vec3d pos = trackedPearl.getEntityPos();
 
-        if (isBubbleColumnAt(world, pos)) {
-            if (!inBubbleColumn) {
-                // Gerade erst reingeflogen -> kurzen Hinweis starten
-                inBubbleColumn = true;
-                bubbleFlashTicksLeft = BUBBLE_FLASH_DURATION_TICKS;
-            }
+        // Erstkontakt merken. inBubbleColumn wird danach NICHT mehr
+        // zurueckgesetzt, auch wenn die Perle durch das Auf-und-Ab-Bouncen
+        // kurzzeitig wieder aus dem Blasensaeulen-Block heraus geraet -
+        // sonst wuerde der Hinweis bei jedem Wiedereintritt neu starten
+        // und nie verschwinden.
+        if (!inBubbleColumn && isBubbleColumnAt(world, pos)) {
+            inBubbleColumn = true;
+            bubbleFlashTicksLeft = BUBBLE_FLASH_DURATION_TICKS;
+        }
+
+        if (inBubbleColumn) {
             secondsRemaining = null;
 
             if (bubbleFlashTicksLeft > 0) {
                 bubbleFlashTicksLeft--;
             } else {
-                // Hinweis fertig angezeigt -> Timer komplett verschwinden lassen
                 stopTracking();
             }
             return;
         }
-        inBubbleColumn = false;
 
         Vec3d velocity = trackedPearl.getVelocity();
 
@@ -150,7 +123,6 @@ public final class PearlTracker {
             }
 
             pos = nextPos;
-            // Luftwiderstand zuerst, danach Schwerkraft - wie bei ProjectileEntity#tick
             velocity = velocity.multiply(DRAG, DRAG, DRAG);
             velocity = velocity.add(0.0, -GRAVITY, 0.0);
         }
